@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NETWATCH | Network Traffic Analyzer</title>
+<style>
+:root {
+  --bg:#0b1120; --panel:#121c2e; --panel2:#19263a;
+  --border:#26364d; --text:#e8eef8; --muted:#91a3ba;
+  --cyan:#35c9e8; --blue:#568bff; --purple:#a78bfa;
+  --green:#39d6a2; --orange:#f5b84b; --red:#ff6b79;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+font-family:Inter,Segoe UI,Arial,sans-serif}
+button,input,select{font:inherit}
+.app{display:flex;min-height:100vh}
+.sidebar{width:235px;background:#101a2b;border-right:1px solid var(--border);
+padding:25px 17px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:42px}
+.brand-icon{width:42px;height:42px;border-radius:12px;
+background:#173b52;color:var(--cyan);display:grid;place-items:center;
+font-size:23px}
+.brand h2{font-size:17px;margin:0;letter-spacing:1px}
+.brand small{color:var(--muted);font-size:10px;letter-spacing:1px}
+.nav-label{font-size:10px;color:#71839c;letter-spacing:1.5px;
+margin:22px 10px 10px}
+.nav-item{padding:12px 11px;border-radius:9px;color:#aebdd0;
+font-size:13px;margin:5px 0;display:flex;gap:11px;align-items:center}
+.nav-item.active{background:#17364d;color:#65d9f2}
+.side-status{margin-top:45px;background:#18263a;border:1px solid var(--border);
+padding:14px;border-radius:12px;font-size:12px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;
+background:var(--green);margin-right:7px}
+main{flex:1;min-width:0;padding:27px 30px}
+.topbar{display:flex;justify-content:space-between;align-items:center;
+gap:15px;margin-bottom:28px}
+.topbar h1{font-size:23px;margin:0 0 5px}
+.sub{color:var(--muted);font-size:12px}
+.top-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.status{font-size:11px;color:var(--green);background:#14372f;
+padding:9px 12px;border-radius:20px}
+.btn{border:1px solid var(--border);background:var(--panel2);
+color:var(--text);padding:10px 14px;border-radius:8px;
+cursor:pointer;font-size:12px}
+.btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}
+.card{background:var(--panel);border:1px solid var(--border);
+border-radius:13px;padding:19px;min-width:0}
+.stat-top{display:flex;justify-content:space-between;align-items:center}
+.stat-label{color:var(--muted);font-size:11px;letter-spacing:.6px}
+.stat-icon{width:35px;height:35px;border-radius:10px;
+display:grid;place-items:center;font-size:17px}
+.stat-value{font-size:29px;font-weight:700;margin:14px 0 5px}
+.stat-note{font-size:11px;color:var(--muted)}
+.cyan{color:var(--cyan)} .purple{color:var(--purple)}
+.orange{color:var(--orange)} .green{color:var(--green)}
+.blue{color:var(--blue)}
+.section-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:17px}
+.card h3{font-size:14px;margin:0 0 5px}
+.card-desc{font-size:11px;color:var(--muted);margin-bottom:18px}
+.chart-area{display:flex;align-items:center;justify-content:center;
+gap:35px;min-height:180px;flex-wrap:wrap}
+.donut{width:145px;height:145px;border-radius:50%;
+background:conic-gradient(var(--cyan) 0deg 300deg,
+var(--purple) 300deg 355deg,var(--orange) 355deg 360deg);
+position:relative;display:grid;place-items:center}
+.donut:after{content:"";position:absolute;width:94px;height:94px;
+border-radius:50%;background:var(--panel)}
+.donut-center{position:relative;z-index:1;text-align:center}
+.donut-center strong{display:block;font-size:20px}
+.donut-center small{font-size:10px;color:var(--muted)}
+.legend{display:grid;gap:13px;font-size:12px}
+.legend-row{display:flex;align-items:center;gap:9px}
+.legend-dot{width:9px;height:9px;border-radius:3px}
+.legend-row span:last-child{color:var(--muted);margin-left:auto}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.info-box{background:var(--panel2);border-radius:9px;padding:13px}
+.info-box small{display:block;color:var(--muted);font-size:10px;margin-bottom:8px}
+.info-box strong{font-size:13px;overflow-wrap:anywhere}
+.table-card{margin-top:17px}
+.table-head{display:flex;justify-content:space-between;align-items:center;
+gap:12px;flex-wrap:wrap;margin-bottom:17px}
+.controls{display:flex;gap:9px;flex-wrap:wrap}
+.controls input,.controls select{background:#0d1727;border:1px solid var(--border);
+color:var(--text);padding:10px 12px;border-radius:8px;font-size:12px}
+.controls input{width:210px}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:11px}
+th{text-align:left;color:#91a3ba;font-weight:600;background:#172338;
+padding:13px 12px;position:sticky;top:0}
+td{padding:13px 12px;border-bottom:1px solid #233249;color:#d4deeb}
+tbody tr:hover{background:#19283d}
+.protocol{padding:5px 9px;border-radius:20px;font-size:10px;font-weight:700}
+.p-TCP{background:#183c50;color:#59d7f1}
+.p-UDP{background:#30264d;color:#c2a8ff}
+.p-ICMP{background:#49351e;color:#ffd17b}
+.p-Other{background:#303c4c;color:#b9c6d6}
+.location{color:#a8c7dc;max-width:230px;overflow:hidden;
+text-overflow:ellipsis}
+.footer{display:flex;justify-content:space-between;gap:10px;
+color:#72849c;font-size:10px;margin-top:17px}
+.empty{text-align:center;padding:30px;color:var(--muted)}
+@media(max-width:1050px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){
+.sidebar{display:none} main{padding:18px 13px}
+.section-grid{grid-template-columns:1fr}
+.topbar{align-items:flex-start;flex-direction:column}
+}
+@media(max-width:430px){.grid{grid-template-columns:1fr 1fr}
+.stat-value{font-size:23px}.card{padding:14px}
+.controls input{width:100%}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-icon">⌁</div>
+    <div><h2>NETWATCH</h2><small>TRAFFIC ANALYZER</small></div>
+  </div>
+  <div class="nav-label">MONITORING</div>
+<div class="nav-item active" onclick="navigateTo('overview', this)">◈ &nbsp; Network Overview</div>
+<div class="nav-item" onclick="navigateTo('packetSection', this)">▤ &nbsp; Packet Inspector</div>
+<div class="nav-item" onclick="navigateTo('ipIntelligenceSection', this)">◎ &nbsp; IP Intelligence</div>
+<div class="nav-item" onclick="navigateTo('monitoringSection', this)">⚙ &nbsp; Monitoring Status</div>
+  <div class="nav-label">SYSTEM</div>
+
+  <div class="side-status">
+    <div><span class="dot"></span>Backend connection</div>
+    <p style="color:var(--muted);margin:10px 0 0">Flask · SQLite · Scapy</p>
+  </div>
+</aside>
+
+<main>
+  <div class="topbar">
+    <div>
+      <h1 id="overview">Network Overview</h1>
+      <div class="sub">Real-time network traffic intelligence and monitoring</div>
+    </div>
+    <div class="top-actions">
+      <span class="status" id="connectionStatus">● CONNECTING</span>
+      <button class="btn" onclick="refreshAll()">↻ Refresh</button>
+      <button class="btn" onclick="exportCSV()">↓ Export CSV</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="stat-top"><span class="stat-label">TOTAL PACKETS</span>
+      <span class="stat-icon cyan" style="background:#17364b">▤</span></div>
+      <div class="stat-value" id="totalPackets">—</div>
+      <div class="stat-note">All stored packet records</div>
+    </div>
+    <div class="card">
+      <div class="stat-top"><span class="stat-label">TCP TRAFFIC</span>
+      <span class="stat-icon blue" style="background:#1b2e50">⇄</span></div>
+      <div class="stat-value blue" id="tcpPackets">—</div>
+      <div class="stat-note">Transmission Control Protocol</div>
+    </div>
+    <div class="card">
+      <div class="stat-top"><span class="stat-label">UDP TRAFFIC</span>
+      <span class="stat-icon purple" style="background:#30264d">⌁</span></div>
+      <div class="stat-value purple" id="udpPackets">—</div>
+      <div class="stat-note">User Datagram Protocol</div>
+    </div>
+    <div class="card">
+      <div class="stat-top"><span class="stat-label">ICMP TRAFFIC</span>
+      <span class="stat-icon orange" style="background:#49351e">⌖</span></div>
+      <div class="stat-value orange" id="icmpPackets">—</div>
+      <div class="stat-note">Internet Control Message Protocol</div>
+    </div>
+  </div>
+
+  <div class="section-grid">
+    <section class="card">
+      <h3>Protocol Distribution</h3>
+      <div class="card-desc">Breakdown of captured packet protocols</div>
+      <div class="chart-area">
+        <div class="donut" id="donut">
+          <div class="donut-center"><strong id="chartTotal">—</strong>
+          <small>PACKETS</small></div>
+        </div>
+        <div class="legend" id="chartLegend">
+          <div class="legend-row"><i class="legend-dot" style="background:var(--cyan)"></i>TCP <span>—</span></div>
+          <div class="legend-row"><i class="legend-dot" style="background:var(--purple)"></i>UDP <span>—</span></div>
+          <div class="legend-row"><i class="legend-dot" style="background:var(--orange)"></i>ICMP <span>—</span></div>
+          <div class="legend-row"><i class="legend-dot" style="background:#8292a8"></i>Other <span>—</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="monitoringSection">
+      <h3>System Information</h3>
+      <div class="card-desc">Current monitoring environment</div>
+      <div class="info-grid">
+        <div class="info-box"><small>NETWORK INTERFACE</small><strong>wlan0</strong></div>
+        <div class="info-box"><small>LOCAL IP</small><strong>192.168.1.12</strong></div>
+        <div class="info-box"><small>BACKEND</small><strong id="backendState">Checking...</strong></div>
+        <div class="info-box"><small>LAST UPDATED</small><strong id="lastUpdated">—</strong></div>
+      </div>
+      <p class="card-desc" style="margin:18px 0 0">
+        Location data is estimated from public IP addresses. Private IPs are
+        labelled as local network addresses.
+      </p>
+    </section>
+  </div>
+
+
+  <section class="card" id="firewallPanel">
+    <h3>Firewall Management</h3>
+    <div class="card-desc">
+      Manage blocked IPv4 addresses on this Kali machine only.
+      This does not block other devices on your Wi-Fi network.
+    </div>
+
+    <div class="controls" style="margin-top:16px">
+      <input id="firewallToken" type="password"
+             placeholder="Administrator token" autocomplete="off">
+      <button class="btn" onclick="connectFirewall()">Connect</button>
+      <span id="firewallStatus">Not connected</span>
+    </div>
+
+    <div class="controls" style="margin-top:12px">
+      <input id="firewallIP" type="text"
+             placeholder="IPv4 address e.g. 203.0.113.10">
+      <input id="firewallReason" type="text"
+             placeholder="Reason (optional)">
+      <button class="btn" onclick="changeFirewallIP('block')">Block IP</button>
+      <button class="btn" onclick="changeFirewallIP('unblock')">Unblock IP</button>
+      <button class="btn" onclick="loadFirewallData()">Refresh</button>
+    </div>
+
+    <h4 style="margin-top:20px">Blocked IP addresses</h4>
+    <div id="blockedIPs" class="card-desc">Connect to load blocked IPs.</div>
+
+    <h4 style="margin-top:20px">Firewall activity history</h4>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>TIME</th><th>IP ADDRESS</th><th>ACTION</th>
+          <th>REASON</th><th>RESULT</th></tr>
+        </thead>
+        <tbody id="firewallHistory">
+          <tr><td colspan="5" class="empty">Not connected</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card table-card" id="packetSection">
+    <div class="table-head">
+      <div><h3>Live Packet Inspector</h3>
+      <div class="card-desc" style="margin:5px 0 0">Latest 100 captured packets with IP intelligence</div></div>
+      <div class="controls">
+  <input id="searchInput"
+         placeholder="Search IP or location..."
+         oninput="renderPackets()">
+
+  <select id="protocolFilter" onchange="renderPackets()">
+    <option value="ALL">All protocols</option>
+    <option value="TCP">TCP</option>
+    <option value="UDP">UDP</option>
+    <option value="ICMP">ICMP</option>
+    <option value="Other">Other</option>
+  </select>
+
+  <input id="senderLocationFilter"
+         placeholder="Filter sender location..."
+         oninput="renderPackets()">
+
+  <input id="receiverLocationFilter"
+         placeholder="Filter receiver location..."
+         oninput="renderPackets()">
+
+  <button class="btn" onclick="clearLocationFilters()">
+    Clear locations
+  </button>
+</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>TIME</th><th>SENDER IP</th><th>SENDER LOCATION</th>
+          <th>RECEIVER IP</th><th>RECEIVER LOCATION</th>
+          <th>PROTOCOL</th><th>SRC PORT</th><th>DST PORT</th><th>SIZE</th>
+        </tr></thead>
+        <tbody id="packetTable">
+          <tr><td colspan="9" class="empty">Loading packet records...</td></tr>
+        </tbody>
+      </table>
+    </div>
+        <div class="card" style="margin:20px 0;padding:20px">
+          <h3>IP Intelligence Details</h3>
+          <p class="card-desc">
+            Click any packet row to inspect sender and receiver IP information.
+          </p>
+          <div id="ipIntelligenceSection">
+  <div id="ipIntelligence" class="card-desc">
+            No packet selected.
+          </div>
+        </div></div>
+    <div class="footer">
+      <span id="packetCount">Waiting for packet data</span>
+      <span>Automatic refresh · 3 seconds</span>
+    </div>
+  </section>  <div class="footer"><span>NETWATCH · Network Traffic Analyzer</span>
+  <span>Academic project · Kali Linux</span></div>
+</main>
+</div>
+
+<script>
+function navigateTo(sectionId, clickedItem) {
+  const section = document.getElementById(sectionId);
+
+  if (!section) {
+    alert("Section not found: " + sectionId);
+    return;
+  }
+
+  section.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+
+  document.querySelectorAll(".nav-item").forEach(item => {
+    item.classList.remove("active");
+  });
+
+  clickedItem.classList.add("active");
+}
+let allPackets = [];
+const locationCache = new Map();
+const pending = new Map();
+
+
+async function getLocation(ip) {
+  if (!ip) {
+    return {
+      location: "Unavailable",
+      isp: "Unknown",
+      organization: "Unknown",
+      asn: "Unknown",
+      domain: "Unknown",
+      vpn: "Unknown",
+      proxy: "Unknown",
+      hosting: "Unknown",
+      cdn: "Unknown"
+    };
+  }
+
+  if (locationCache.has(ip)) return locationCache.get(ip);
+  if (pending.has(ip)) return pending.get(ip);
+
+  const task = fetch("/api/geolocate?ip=" + encodeURIComponent(ip))
+    .then(r => r.json())
+    .then(d => {
+      const location = d.status === "private"
+        ? "Local Network"
+        : d.status === "success"
+          ? [d.city, d.region, d.country].filter(Boolean).join(", ")
+          : "Location unavailable";
+
+      const value = {
+        location,
+        isp: d.isp || "Unknown",
+        organization: d.organization || "Unknown",
+        asn: d.asn || "Unknown",
+        domain: d.domain || "Unknown",
+        vpn: d.vpn || "Unknown",
+        proxy: d.proxy || "Unknown",
+        hosting: d.hosting || "Unknown",
+        cdn: d.cdn || "Unknown"
+      };
+
+      locationCache.set(ip, value);
+      return value;
+    })
+    .catch(() => ({
+      location: "Location unavailable",
+      isp: "Unknown",
+      organization: "Unknown",
+      asn: "Unknown",
+      domain: "Unknown",
+      vpn: "Unknown",
+      proxy: "Unknown",
+      hosting: "Unknown",
+      cdn: "Unknown"
+    }))
+    .finally(() => pending.delete(ip));
+
+  pending.set(ip, task);
+  return task;
+}
+
+
+function number(id,value){
+  document.getElementById(id).textContent =
+    Number(value||0).toLocaleString();
+}
+
+async function loadStats(){
+  try{
+    const r=await fetch("/api/stats");
+    if(!r.ok) throw Error("API error");
+    const d=await r.json();
+    const counts={TCP:0,UDP:0,ICMP:0,Other:0};
+    d.protocols.forEach(p=>{
+      counts[p.protocol]=(counts[p.protocol]||0)+p.count;
+    });
+
+    number("totalPackets",d.total_packets);
+    number("tcpPackets",counts.TCP);
+    number("udpPackets",counts.UDP);
+    number("icmpPackets",counts.ICMP);
+    number("chartTotal",d.total_packets);
+
+    const total=Math.max(1,d.total_packets);
+    const tcp=counts.TCP/total*360;
+    const udp=counts.UDP/total*360;
+    const icmp=counts.ICMP/total*360;
+    document.getElementById("donut").style.background =
+      `conic-gradient(var(--cyan) 0deg ${tcp}deg,
+       var(--purple) ${tcp}deg ${tcp+udp}deg,
+       var(--orange) ${tcp+udp}deg ${tcp+udp+icmp}deg,
+       #8292a8 ${tcp+udp+icmp}deg 360deg)`;
+
+    const colors={TCP:"var(--cyan)",UDP:"var(--purple)",
+      ICMP:"var(--orange)",Other:"#8292a8"};
+    document.getElementById("chartLegend").innerHTML=
+      Object.keys(counts).map(k=>
+      `<div class="legend-row">
+      <i class="legend-dot" style="background:${colors[k]}"></i>
+      ${k}<span>${counts[k].toLocaleString()}</span></div>`).join("");
+
+    document.getElementById("connectionStatus").textContent="● LIVE";
+    document.getElementById("backendState").textContent="Connected";
+    document.getElementById("backendState").style.color="var(--green)";
+  }catch(e){
+    document.getElementById("connectionStatus").textContent="● DISCONNECTED";
+    document.getElementById("connectionStatus").style.color="var(--red)";
+    document.getElementById("backendState").textContent="Unavailable";
+  }
+}
+
+async function loadPackets(){
+  try{
+    const r=await fetch("/api/packets");
+    if(!r.ok) throw Error("Packet API error");
+    allPackets=await r.json();
+    renderPackets();
+
+    const ips=[...new Set(allPackets.slice(0,20).flatMap(p=>
+      [p.source_ip,p.destination_ip]).filter(Boolean))]
+      .filter(ip=>!locationCache.has(ip));
+    for(let i=0;i<ips.length;i+=4){
+      await Promise.all(ips.slice(i,i+4).map(getLocation));
+    }
+    renderPackets();
+
+    document.getElementById("lastUpdated").textContent=
+      new Date().toLocaleTimeString();
+    document.getElementById("packetCount").textContent=
+      `${allPackets.length} recent packet records loaded`;
+  }catch(e){
+    console.error(e);
+  }
+}
+
+  function renderPackets(){
+  const search =
+    document.getElementById("searchInput").value.toLowerCase().trim();
+
+  const filter =
+    document.getElementById("protocolFilter").value;
+
+  const senderLocation =
+    document.getElementById("senderLocationFilter").value.toLowerCase().trim();
+
+  const receiverLocation =
+    document.getElementById("receiverLocationFilter").value.toLowerCase().trim();
+
+  const filtered = allPackets.filter(p => {
+    const sender =
+      locationCache.get(p.source_ip)?.location || "Checking...";
+
+    const receiver =
+      locationCache.get(p.destination_ip)?.location || "Checking...";
+
+    const searchable =
+      `${p.source_ip} ${p.destination_ip} ${sender} ${receiver}`.toLowerCase();
+
+    const matchesSearch = searchable.includes(search);
+
+    const matchesProtocol =
+      filter === "ALL" || p.protocol === filter;
+
+    const matchesSender =
+      sender.toLowerCase().includes(senderLocation);
+
+    const matchesReceiver =
+      receiver.toLowerCase().includes(receiverLocation);
+
+    return matchesSearch &&
+           matchesProtocol &&
+           matchesSender &&
+           matchesReceiver;
+  });
+
+  const body = document.getElementById("packetTable");
+  body.innerHTML = "";
+
+  if (!filtered.length) {
+    body.innerHTML =
+      '<tr><td colspan="9" class="empty">No matching packets found</td></tr>';
+  } else {
+    filtered.forEach(p => {
+      const row = document.createElement("tr");
+
+      const values = [
+        p.timestamp,
+        p.source_ip,
+        locationCache.get(p.source_ip)?.location || "Checking...",
+        p.destination_ip,
+        locationCache.get(p.destination_ip)?.location || "Checking...",
+        p.protocol,
+        p.source_port ?? "-",
+        p.destination_port ?? "-",
+        (p.packet_size ?? "-") + " bytes"
+      ];
+
+      values.forEach((v, i) => {
+        const td = document.createElement("td");
+
+        if (i === 5) {
+          const badge = document.createElement("span");
+          badge.className = "protocol p-" + p.protocol;
+          badge.textContent = p.protocol;
+          td.appendChild(badge);
+        } else {
+          td.textContent = v;
+        }
+
+        if (i === 2 || i === 4) {
+          td.className = "location";
+        }
+
+        row.appendChild(td);
+      });
+      row.style.cursor = "pointer";
+
+      row.addEventListener("click", async () => {
+        const panel = document.getElementById("ipIntelligence");
+        panel.textContent = "Loading IP intelligence...";
+
+        const [sender, receiver] = await Promise.all([
+          getLocation(p.source_ip),
+          getLocation(p.destination_ip)
+        ]);
+
+        panel.replaceChildren();
+
+        function addSection(title, ip, info) {
+          const section = document.createElement("div");
+          const heading = document.createElement("h4");
+          heading.textContent = title;
+          section.appendChild(heading);
+
+          const fields = [
+            ["IP Address", ip],
+            ["Location", info.location],
+            ["ISP", info.isp],
+            ["Organization", info.organization],
+            ["ASN", info.asn],
+            ["Domain", info.domain],
+            ["VPN", info.vpn],
+            ["Proxy", info.proxy],
+            ["Hosting", info.hosting],
+            ["CDN", info.cdn]
+          ];
+
+          fields.forEach(([label, value]) => {
+            const p = document.createElement("p");
+            const strong = document.createElement("strong");
+            strong.textContent = label + ": ";
+            p.appendChild(strong);
+            p.appendChild(document.createTextNode(String(value ?? "Unknown")));
+            section.appendChild(p);
+          });
+
+          panel.appendChild(section);
+        }
+
+        addSection("Sender Information", p.source_ip, sender);
+        addSection("Receiver Information", p.destination_ip, receiver);
+      });
+      body.appendChild(row);
+    });
+  }
+
+  document.getElementById("packetCount").textContent =
+    `${filtered.length} matching records · ${allPackets.length} loaded`;
+}
+function clearLocationFilters() {
+  document.getElementById("senderLocationFilter").value = "";
+  document.getElementById("receiverLocationFilter").value = "";
+  renderPackets();
+}
+
+function exportCSV(){
+  if(!allPackets.length){alert("No packet data to export.");return;}
+  const headers=["Timestamp","Sender IP","Sender Location","Receiver IP",
+    "Receiver Location","Protocol","Source Port","Destination Port","Size"];
+  const quote=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+  const rows=allPackets.map(p=>[
+    p.timestamp,p.source_ip,
+    locationCache.get(p.source_ip)?.location||"Not looked up",
+    p.destination_ip,
+    locationCache.get(p.destination_ip)?.location||"Not looked up",
+    p.protocol,p.source_port,p.destination_port,p.packet_size
+  ]);
+  const csv=[headers,...rows].map(row=>row.map(quote).join(",")).join("\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="network_traffic_packets.csv";a.click();
+  URL.revokeObjectURL(url);
+}
+
+
+let firewallToken = "";
+
+async function firewallRequest(endpoint, options = {}) {
+  if (!firewallToken) throw new Error("Connect using your administrator token first.");
+
+  const response = await fetch(endpoint, {
+    ...options,
+    headers: {
+      "X-Admin-Token": firewallToken,
+      ...(options.headers || {})
+    }
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Firewall request failed");
+  }
+
+  return data;
+}
+
+async function connectFirewall() {
+  const token = document.getElementById("firewallToken").value.trim();
+
+  if (!token) {
+    alert("Enter your administrator token.");
+    return;
+  }
+
+  firewallToken = token;
+
+  try {
+    const data = await firewallRequest("/api/firewall/status");
+
+    document.getElementById("firewallStatus").textContent =
+      `Connected · ${data.mode} · ${data.blocked_count} blocked`;
+
+    await loadFirewallData();
+  } catch (error) {
+    firewallToken = "";
+    document.getElementById("firewallStatus").textContent = "Connection failed";
+    alert(error.message);
+  }
+}
+
+async function loadFirewallData() {
+  try {
+    const [blocked, history] = await Promise.all([
+      firewallRequest("/api/firewall/blocked"),
+      firewallRequest("/api/firewall/history")
+    ]);
+
+    const blockedBox = document.getElementById("blockedIPs");
+    blockedBox.textContent = "";
+
+    if (!blocked.blocked_ips.length) {
+      blockedBox.textContent = "No IP addresses are currently blocked.";
+    } else {
+      blocked.blocked_ips.forEach(ip => {
+        const item = document.createElement("div");
+        item.style.padding = "8px 0";
+        item.textContent = ip;
+        blockedBox.appendChild(item);
+      });
+    }
+
+    const tbody = document.getElementById("firewallHistory");
+    tbody.textContent = "";
+
+    if (!history.length) {
+      tbody.innerHTML =
+        '<tr><td colspan="5" class="empty">No firewall activity yet.</td></tr>';
+      return;
+    }
+
+    history.forEach(event => {
+      const row = document.createElement("tr");
+      [
+        event.event_time,
+        event.ip,
+        event.action,
+        event.reason || "-",
+        event.result
+      ].forEach(value => {
+        const cell = document.createElement("td");
+        cell.textContent = value ?? "-";
+        row.appendChild(cell);
+      });
+      tbody.appendChild(row);
+    });
+
+    document.getElementById("firewallStatus").textContent =
+      `Connected · ${blocked.blocked_ips.length} blocked`;
+  } catch (error) {
+    document.getElementById("firewallStatus").textContent = "Refresh failed";
+    console.error(error);
+  }
+}
+
+async function changeFirewallIP(action) {
+  const ip = document.getElementById("firewallIP").value.trim();
+  const reason = document.getElementById("firewallReason").value.trim();
+
+  if (!ip) {
+    alert("Enter an IPv4 address.");
+    return;
+  }
+
+  const confirmed = confirm(
+    `${action.toUpperCase()} ${ip} on this Kali machine?`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const result = await firewallRequest(`/api/firewall/${action}`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ip, reason})
+    });
+
+    alert(result.result);
+    await loadFirewallData();
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+function refreshAll(){loadStats();loadPackets();}
+refreshAll();
+setInterval(loadStats,3000);
+setInterval(loadPackets,3000);
+</script>
+</body>
+</html>
